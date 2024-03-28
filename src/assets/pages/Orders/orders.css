@@ -1,0 +1,107 @@
+/* Container General */
+.main-orders {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-template-rows: repeat(6, auto);
+    grid-auto-flow: dense;
+    grid-column-gap: 0px;
+    gap: .5rem;
+}
+
+/* DIV 1  */
+.main-clients {
+    grid-area: 1 / 1 / 3 / 6;
+    width: 100%;
+    border: 1px solid black;
+    height: 100px;
+    margin: .5rem 0 0 0;
+    display: flex;
+
+    .text-clients {
+        margin: 1rem 0 0 1rem;
+        width: 300px;
+        height: 30px;
+    }
+
+    .client-table {
+        margin: .5rem 0 .5rem 1rem;
+        width: 300px;
+    }
+
+    .customes-data {
+        margin: .3rem 0 0 .5rem;
+    }
+}
+
+/* detalles del pedido  */
+.detalle-custommer {
+    grid-area: 3 / 1 / 7 / 6;
+    overflow-y: hidden;
+    grid-template-columns: repeat(3, auto);
+    /* grid-template-rows: repeat(3, 1fr); */
+    gap: 0px 0px;
+    /* border: 1px solid black; */
+    margin: .5rem 0 0 0;
+    display: grid;
+    justify-content: space-between;
+}
+
+/* Producto */
+.main-product {
+
+    grid-area: 2 / 4 / 4 / 4;
+    border: 1px solid black;
+    margin: .5rem 0 0 0;
+}
+
+.order {
+    grid-area: 1 / 1 / 4 / 2;
+}
+
+/* Ordenes anteriores */
+.aside-orders {
+    grid-area: 1 / 6 / 7 / 8;
+    border: 1px solid black;
+    margin: .5rem 0 0 0;
+}
+
+
+
+.table-container {
+    max-height: 120px;
+    /* O ajusta a la altura deseada */
+    overflow-y: auto;
+    font-size:xx-small;
+}
+
+.table-products {
+    max-height: 500px;
+    font-size: xx-small;
+    overflow-y: auto;
+}
+
+.pedidos-table {
+    max-height: 500px;
+    font-size: xx-small;
+    overflow-y: auto;
+}
+
+
+button.btn-danger {
+    background-color: red;
+}
+
+.todo-item .todo-actions {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+
+.Pedidos-history{
+    margin: .5rem;
+    padding: .5rem;
+    border: 1px solid black;
+    border-radius: 10px;
+
+}

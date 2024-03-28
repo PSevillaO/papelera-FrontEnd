@@ -1,0 +1,31 @@
+.main-zone {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+    grid-column-gap: 0px;
+    grid-row-gap: 0px;
+    }
+    
+    .input-zone { grid-area: 1 / 1 / 6 / 3; }
+    .table-zone { grid-area: 1 / 3 / 6 / 6; }
+
+.input-zone{
+    border: 1px solid black;
+    border-radius: 5px;
+    margin: .5rem;
+    padding: .5rem;
+}
+
+.table-zone {
+    border: 1px solid black;
+    border-radius: 5px;
+    margin: .5rem;
+    padding: .5rem;
+
+}
+
+.product-table{
+    max-height: 500px;
+    font-size: xx-small;
+    overflow-y: auto;
+}
