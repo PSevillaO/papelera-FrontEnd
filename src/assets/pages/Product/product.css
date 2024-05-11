@@ -9,7 +9,6 @@
     cursor: pointer;
 }
 
-
 .category {
     display: flex;
     flex-direction: row;
@@ -70,12 +69,10 @@
 }
 
 .input-form {
-    /* overflow-y: scroll; */
     overflow-y: unset;
 }
 
 .main-input-prod {
-    /* margin-top: 3em; */
     display: grid;
     gap: .5rem;
     height: 80%;
@@ -116,9 +113,6 @@
     height: 30px;
     width: 100px;
 }
-
-/* TABLA */
-
 
 .product-table {
     margin: .5rem;
