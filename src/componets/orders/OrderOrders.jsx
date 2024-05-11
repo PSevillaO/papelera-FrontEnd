@@ -8,7 +8,7 @@ import Button from 'react-bootstrap/Button';
 import axios from 'axios';
 import OrderProducts from './OrderProducts';
 import Swal from "sweetalert2"
-import Events from '../../assets/pages/Orders/events';
+import Events from '../../assets/pages/Orders/Events';
 import 'animate.css';
 
 
