@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useEffect } from "react";
 import Swal from "sweetalert2";
 import { useForm } from "react-hook-form";
-import './Product.css';
+// import './Product.css';
+import 'src/assets/pages/Product/Product.css'
 import { ProductsTable } from "./ProductsTable";
 
 
