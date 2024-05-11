@@ -21,9 +21,8 @@ export default function Header() {
             </div>
 
             <NavLink to="/orders" onClick={() => setIsActiveProduct(false)} className='nav-link'>Pedidos</NavLink>
-            <NavLink to="/stock" onClick={() => setIsActiveProduct(false)} className='nav-link'>Stock</NavLink>
-
             <NavLink to="/deliveries" onClick={() => setIsActiveProduct(false)} className='nav-link'>Entregas</NavLink>
+            <NavLink to="/stock" onClick={() => setIsActiveProduct(false)} className='nav-link'>Stock</NavLink>
             <NavLink to="/account" onClick={() => setIsActiveProduct(false)} className='nav-link'>Pagos</NavLink>
 
             <NavLink to="/users" onClick={() => setIsActiveProduct(false)} className='nav-link'>Usuarios</NavLink>

@@ -7,11 +7,10 @@ import InputGroup from 'react-bootstrap/InputGroup';
 import Table from 'react-bootstrap/Table';
 import axios from 'axios';
 import OrderDatos from '../../../componets/orders/OrderDatos';
-
-// import TextField from '@mui/material/TextField';
-// import Autocomplete from '@mui/material/Autocomplete';
 import { OrderOrders } from '../../../componets/orders/OrderOrders';
 import OrderPedidos from '../../../componets/orders/OrderPedidos';
+
+const URL = import.meta.env.VITE_SERVER_URL;
 
 
 export default function Orders() {
@@ -22,6 +21,15 @@ export default function Orders() {
   const [searchValue, setSearchValue] = useState('');
   // Estado para almacenar los datos del cliente seleccionado
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [pedidosActualizados, setPedidosActualizados] = useState(0);
+
+  const [dataOrder, setDataOrder] = useState({});
+
+
+
+  const handlePedidoData = (pedidoDatas) => {
+    setDataOrder(pedidoDatas);
+  };
 
   const handleInputChange = (event) => {
     const value = event.target.value.toLowerCase();
@@ -45,12 +53,17 @@ export default function Orders() {
   // Función para realizar la llamada a la API
   const fetchData = async () => {
     try {
-      const response = await axios.get('http://localhost:4000/api/customers');
-      setApiData(response.data);
+      const response = await axios.get(`${URL}/customers`);
+      setApiData(response.data.customers);
     } catch (error) {
       console.error('Error fetching data:', error);
     }
   };
+
+  const actualizarPedidos = () => {
+    setPedidosActualizados(prevState => prevState + 1);
+  };
+
 
 
 
@@ -67,38 +80,23 @@ export default function Orders() {
   // Función para renderizar la tabla
   function pintaTabla() {
     return filteredData.map((customer) => (
-      <tr key={customer.customer_id} onClick={() => handleRowClick(customer)}>
-        <td>{customer.customer_id}</td>
+      <tr key={customer._id} onClick={() => handleRowClick(customer)}>
         <td>{customer.nombre}</td>
       </tr>
     ));
   }
 
 
-  // const defaultProps = {
-    // options: apiData,
-    // getOptionLabel: (option) => option.nombre,
-  // };
-
   return (
     <>
       <div className='main-orders'>
         <div className='main-clients'>
           <InputGroup size="sm" className="mb-3 text-clients" >
-            { <Form.Control
+            {<Form.Control
               placeholder="Cliente"
               onChange={handleInputChange}
               onKeyPress={handleKeyPress}
-              value={searchValue}/> }
-            {/* <Autocomplete
-              {...defaultProps}
-              id="auto-select"
-              autoSelect
-              size="small"
-              sx={{ width: 300 }}
-              renderInput={(params) => (
-                <TextField {...params} label="Clientes" variant="standard" onKeyPress={handleKeyPress} onChange={handleInputChange} />
-              )} /> */}
+              value={searchValue} />}
           </InputGroup>
           <div className='table-container'>
             <Table striped bordered hover size="sm" className='client-table'>
@@ -107,17 +105,19 @@ export default function Orders() {
               </tbody>
             </Table>
           </div>
-
+          {/* muestra los datos del cliente  */}
           <OrderDatos selectedCustomer={selectedCustomer} />
-
         </div>
 
         <div className='detalle-custommer'>
-          <OrderOrders selectedCustomer={selectedCustomer} />
+          {/* muestra los datos del pedido, crea el pedido  */}
+          {/* <OrderOrders Customer={selectedCustomer} onPedidosActualizados={actualizarPedidos} /> */}
+          {selectedCustomer && <OrderOrders Customer={selectedCustomer} onPedidosActualizados={actualizarPedidos} dataOrder={dataOrder} />}
         </div>
 
         <aside className='aside-orders'>
-          <OrderPedidos selectedCustomer={selectedCustomer} />
+          {/* muetra los pedidos del cliente selecionado */}
+          <OrderPedidos selectedCustomer={selectedCustomer} pedidosActualizados={pedidosActualizados} onPedidoData={handlePedidoData} />
         </aside>
       </div>
     </>

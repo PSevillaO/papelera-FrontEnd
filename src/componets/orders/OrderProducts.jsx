@@ -1,17 +1,19 @@
+// muetras os productos tipo tabla 
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import Table from 'react-bootstrap/Table';
 import PropTypes from 'prop-types';
+const URL = import.meta.env.VITE_SERVER_URL;
 
 export default function OrderProducts({ searchValue, articleValue, onProductSelect, products }) {
     const [filteredData, setFilteredData] = useState([]);
-    
+
 
     useEffect(() => {
         setFilteredData(
             products.filter((product) => {
-                const productName = product.nombre || '';
+                const productName = product.descripcion || '';
                 const article = product.articulo || '';
                 const searchLowerCase = searchValue.toLowerCase();
                 const articleLowerCase = article.toLowerCase();
@@ -23,19 +25,22 @@ export default function OrderProducts({ searchValue, articleValue, onProductSele
             })
         );
     }, [searchValue, articleValue, products]);
-    
+
     const handleRowClick = (product) => {
         onProductSelect(product);
     };
 
     const pintaTabla = () => {
         return filteredData.map((product) => (
-            <tr key={product.product_id} onClick={() => handleRowClick(product)}>
-                <td>{product.nombre}</td>
-                <td>{product.detalle}</td>
-                <td>{product.price}</td>
-                <td>{product.category_name}</td>
+            <tr key={product._id} onClick={() => handleRowClick(product)}>
                 <td>{product.articulo}</td>
+                <td>{product.descripcion}</td>
+                <td>{product.detalle}</td>
+                <td>{product.presentacion}</td>
+                <td>{(((product.category.porcentaje / 100) * product.precio) + product.precio).toFixed(2)}</td>
+                <td>{product.precio}</td>
+                {/* <td>{product.category.porcentaje}</td> */}
+
             </tr>
         ));
     };
@@ -43,7 +48,7 @@ export default function OrderProducts({ searchValue, articleValue, onProductSele
     useEffect(() => {
         const fetchData = async () => {
             try {
-                await axios.get('http://localhost:4000/api/products');
+                await axios.get(`${URL}/products`);
             } catch (error) {
                 console.error('Error fetching data:', error);
             }
@@ -53,16 +58,20 @@ export default function OrderProducts({ searchValue, articleValue, onProductSele
 
     return (
         <div className='table-products'>
+            {/* <div className='table'> */}
             <Table striped bordered hover size="sm" className='client-table'>
                 <tbody>
                     {filteredData.length > 0 ? (
                         <>
                             <tr>
-                                <th>Nombre</th>
-                                <th>Detalle</th>
-                                <th>Precio</th>
-                                <th>Categoria</th>
                                 <th>Articulo</th>
+                                <th>Descripcion</th>
+                                <th>Detalle</th>
+                                <th>Presentacion</th>
+                                <th>Lista</th>
+                                <th>Proveedor</th>
+
+                                {/* <th>%</th> */}
                             </tr>
                             {pintaTabla()}
                         </>
@@ -73,6 +82,7 @@ export default function OrderProducts({ searchValue, articleValue, onProductSele
                     )}
                 </tbody>
             </Table>
+            {/* </div> */}
         </div>
     );
 }

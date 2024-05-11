@@ -152,3 +152,9 @@
 .btn-submit {
     margin: 1rem;
 }
+
+.cate-porc {
+    input {
+        width: 100px !important;
+    }
+}

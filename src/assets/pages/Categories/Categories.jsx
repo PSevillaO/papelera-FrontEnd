@@ -37,12 +37,13 @@ export default function Categories() {
       const formData = new FormData();
       formData.append("nombre", data.nombre);
       formData.append("descripcion", data.descripcion);
+      formData.append("porcentaje", data.porcentaje);
 
-      //si estroy creando una categoria 
+      //si estoy creando una categoria 
       if (isNew) {
         formData.append("parent", categoryId)
         const response = await axios.post(`${URL}/categories`, formData)
-        console.log("Response", response)
+        // console.log("Response", response.data.category)
         setSelectedCategory(response.data.category)
 
 
@@ -52,7 +53,8 @@ export default function Categories() {
           icon: "success"
         });
         getCategories();
-        setFormValue(selectedCategory);
+        // setFormValue(response.data.category);
+        setFormValue();
 
       } else {
         // aca estoy editando una categoria
@@ -101,6 +103,8 @@ export default function Categories() {
   function setFormValue(category) {
     setValue("nombre", category?.nombre || "")
     setValue("descripcion", category?.descripcion || "")
+    setValue("porcentaje", category?.porcentaje || 0)
+
   }
   // sale del crear categoria
   function exitCategory() {
@@ -222,6 +226,13 @@ export default function Categories() {
               <label className="form-lbl" htmlFor="descripcion">Descripcion</label>
               <span className="form-line"></span>
             </div>
+
+            <div className="form-group frm-cate cate-porc">
+              <input id="porcentaje" type="number" className="form-input cate-porc" placeholder=" " {...register("porcentaje")} />
+              <label className="form-lbl" htmlFor="porcentaje">Porcentaje</label>
+              <span className="form-line"></span>
+            </div>
+
             <div className="btn-submit">
               <button type="submit" className={isNew ? "btn-form btn-create" : "btn-form btn-Edit"}     >
                 {

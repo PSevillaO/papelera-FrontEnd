@@ -1,18 +1,32 @@
 import { useState, useEffect, useRef } from 'react';
 import Form from 'react-bootstrap/Form';
 import InputGroup from 'react-bootstrap/InputGroup';
+import PropTypes from 'prop-types';
 
 import Table from 'react-bootstrap/Table';
 import Button from 'react-bootstrap/Button';
 import axios from 'axios';
 import OrderProducts from './OrderProducts';
 import Swal from "sweetalert2"
-// import OrderPedidos from './OrderPedidos';
 import Events from '../../assets/pages/Orders/events';
 import 'animate.css';
 
 
-export function OrderOrders(Customer) {
+
+const URL = import.meta.env.VITE_SERVER_URL;
+
+const getTomorrowDate = () => {
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const year = tomorrow.getFullYear();
+    const month = String(tomorrow.getMonth() + 1).padStart(2, '0');
+    const day = String(tomorrow.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+
+export function OrderOrders({ Customer, onPedidosActualizados, dataOrder }) {
     const [searchValue, setSearchValue] = useState('');
     const [articleValue, setArticleValue] = useState('');
     const [selectedProducts, setSelectedProducts] = useState([]);
@@ -20,7 +34,12 @@ export function OrderOrders(Customer) {
     const quantityInputRef = useRef(null);
     const [products, setProducts] = useState([]);
     const [filteredProducts, setFilteredProducts] = useState([]);
-    const [setHistorialPedidoActualizado] = useState(0);
+    const [deliveryDate, setDeliveryDate] = useState(getTomorrowDate());
+    const [pedidoActualizado, setPedidoActualizado] = useState(0);
+    const [editProductId, setEditProductId] = useState(null); // Nuevo estado para almacenar el ID del producto que se está editando
+    const [editPrice, setEditPrice] = useState(null); // Nuevo estado para almacenar el precio editado
+
+    const [isEdited, setIsEdited] = useState(false);// estado para ver si edito
 
 
     const handleInputChange = (event) => {
@@ -29,17 +48,9 @@ export function OrderOrders(Customer) {
         setSearchValue(lowercaseValue);
     };
 
-    // const handleArticleChange = (event) => {
-    //     const value = event.target.value || '';
-    //     const lowercaseValue = value.toLowerCase();
-    //     setArticleValue(lowercaseValue);
-    // };
-
-
-    //Verifica si el producto ya se encuentra cargado
     const handleProductSelect = (product) => {
         const isProductSelected = selectedProducts.some(
-            (selectedProduct) => selectedProduct.product_id === product.product_id
+            (selectedProduct) => selectedProduct._id === product._id
         );
         if (!isProductSelected) {
             setSelectedProducts([...selectedProducts, { ...product, quantity }]);
@@ -55,7 +66,7 @@ export function OrderOrders(Customer) {
 
         if (quantity > 0 && firstFilteredProduct) {
             const isProductSelected = selectedProducts.some(
-                (selectedProduct) => selectedProduct.product_id === firstFilteredProduct.product_id
+                (selectedProduct) => selectedProduct._id === firstFilteredProduct._id
             );
 
             if (!isProductSelected) {
@@ -72,9 +83,53 @@ export function OrderOrders(Customer) {
     };
 
 
+    const BorraPedidos = () => {
+        setSelectedProducts([]);
+        setIsEdited(false);  // al notener pedidos no tiene que dejar editar
+    }
+
+
     const BorraPedido = (productId) => {
-        const updatedProducts = selectedProducts.filter(product => product.product_id !== productId);
+        const updatedProducts = selectedProducts.filter(product => product._id !== productId);
         setSelectedProducts(updatedProducts);
+    };
+
+    const EditarPrecio = (productId) => {
+        setEditProductId(productId); // Establecer el ID del producto que se está editando
+        const product = selectedProducts.find(product => product._id === productId);
+        setEditPrice(product && (((product.category.porcentaje / 100) * product.precio) + product.precio).toFixed(2)); // Establecer el precio actual del producto en el 
+        console.log(product)
+    }
+
+    const handleEditPriceChange = (event) => {
+        const value = parseFloat(event.target.value) || 0;
+        setEditPrice(value);
+    };
+
+    const handleEditSave = (productId) => {
+        setSelectedProducts(prevProducts => prevProducts.map(product => {
+            if (product._id === productId) {
+                // Obtenemos el precio del producto antes de aplicar el porcentaje
+                const originalPrice = product.precio / (1 + product.category.porcentaje / 100);
+
+                // Verificamos si hay un precio editado, de lo contrario mantenemos el precio existente
+                const editedPrice = editPrice !== null ? parseFloat(editPrice) : originalPrice;
+
+                return { ...product, precio: editedPrice, quantity: quantity, isEdited: true };
+            }
+
+            return product;
+        }));
+
+        setEditProductId(null);
+        setEditPrice(null);
+        setQuantity(1);
+    };
+
+
+    const handleEditPriceCancel = () => {
+        setEditProductId(null);
+        setEditPrice(null);
     };
 
     const handleQuantityChange = (event) => {
@@ -91,8 +146,6 @@ export function OrderOrders(Customer) {
 
     const handleEnterPress = (e) => {
         if (e.key === 'Enter') {
-
-            console.log("Enter ", e)
             e.preventDefault();
             handleAddToOrder();
         }
@@ -108,12 +161,13 @@ export function OrderOrders(Customer) {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await fetch('http://localhost:4000/api/products');
-                const data = await response.json();
-                setProducts(data);
-
+                const response = await axios.get(`${URL}/products?limit=100`);
+                const data = response.data.products
+                if (data) {
+                    setProducts(data);
+                }
                 const filteredData = data.filter((product) =>
-                    (product.nombre && product.nombre.toLowerCase().includes(searchValue)) ||
+                    (product.descripcion && product.descripcion.toLowerCase().includes(searchValue)) ||
                     (product.articulo && product.articulo.toLowerCase().includes(searchValue))
                 );
 
@@ -128,19 +182,51 @@ export function OrderOrders(Customer) {
 
     useEffect(() => {
         const filteredData = products.filter((product) =>
-            (product.nombre && product.nombre.toLowerCase().includes(searchValue)) ||
+            (product.descripcion && product.descripcion.toLowerCase().includes(searchValue)) ||
             (product.articulo && product.articulo.toLowerCase().includes(articleValue))
         );
-
         setFilteredProducts(filteredData);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchValue, articleValue]);
 
+
+    // esto es el que viene de OrderPedidos
+    useEffect(() => {
+        if (dataOrder && ((dataOrder.orders && dataOrder.orders.length > 0) || (dataOrder.products && dataOrder.products.length > 0))) {
+            const selectedProducts = (dataOrder.orders || [dataOrder]).flatMap(order =>
+                order.products.map(productItem => {
+                    const product = productItem.product;
+                    const category = product.category || {}; // Si product.category es undefined, asigna un objeto vacío
+                    const porcentaje = category.porcentaje || 0; // Si category.porcentaje es undefined, asigna 0
+
+                    return {
+                        _id: product._id,
+                        articulo: product.articulo,
+                        descripcion: product.descripcion,
+                        precio: product.precio,
+                        quantity: productItem.quantity,
+                        stock: product.stock,
+                        isEdited: false,
+                        category: {
+                            porcentaje: porcentaje,
+                            _id: category._id
+                        }
+                    };
+                })
+            );
+            // console.log(selectedProducts)
+            setSelectedProducts(selectedProducts);
+            setIsEdited(true);  //esto es para ver si puedo editar, aca cambio estado 
+        }
+    }, [dataOrder]);
+
+
     const total = selectedProducts.reduce((acc, product) => {
-        return acc + product.quantity * product.price;
+        // console.log(product.precio)
+        return acc + product.quantity * (product.isEdited ? product.precio : (((product.category.porcentaje / 100) * product.precio) + product.precio));
+
     }, 0);
 
-
-    // Función para limpiar productos seleccionados y otros estados
     const limpiarProductosSeleccionados = () => {
         setSelectedProducts([]);
         setQuantity(1);
@@ -148,43 +234,108 @@ export function OrderOrders(Customer) {
         setArticleValue('');
     };
 
+    const EditaPedidos = () => {
+        try {
+            if (isEdited) {
+                const pedidoData = {
+                    products: selectedProducts.map(product => ({
+                        product: product._id,
+                        quantity: product.quantity,
+                        stock: product.stock,
+                        price: product.isEdited ? product.precio : (((product.category.porcentaje / 100) * product.precio) + product.precio).toFixed(2)
+                    })),
+                    customer: Customer._id,
+                    deliveryDate: deliveryDate,
+                    status: "Pending"
+                }
+                if (pedidoData.products.length !== 0) {
+                    Swal.fire({
+                        title: "Edita el pedido?",
+                        text: `Desea Editar el Pedido`,
+                        icon: "warning",
+                        confirmButtonText: "Confirmar",
+                        showCancelButton: true,
+                    }).then(async result => {
+                        if (result.isConfirmed) {
+                            await axios.put(`${URL}/orders/${dataOrder._id}`, { pedidoData });
+
+                            window.dispatchEvent(Events.updatePedidos);
+                            limpiarProductosSeleccionados();
+                            setPedidoActualizado(prevState => prevState + 1);
+                            onPedidosActualizados(pedidoActualizado);
+                            setIsEdited(false);
+                        }
+                    })
+                } else {
+                    Swal.fire({
+                        title: "Se debe cargar un Producto",
+                        showClass: {
+                            popup: `animate__animated animate__fadeInUp animate__faster`
+                        },
+                        hideClass: {
+                            popup: `animate__animated animate__fadeOutDown animate__faster`
+                        }
+                    });
+                }
+            } else {
+                Swal.fire({
+                    title: "No se puede editar",
+                    showClass: {
+                        popup: `animate__animated animate__fadeInUp animate__faster`
+                    },
+                    hideClass: {
+                        popup: `animate__animated animate__fadeOutDown animate__faster`
+                    }
+                });
+            }
+
+        } catch (error) {
+            console.error('Error al grabar pedido:', error);
+        }
+
+
+
+    }
+
 
     const GrabaPedido = async () => {
         try {
-            if (!Customer.selectedCustomer) {
+            if (!Customer) {
                 Swal.fire({
                     title: "Se debe cargar un Cliente",
                     showClass: {
-                        popup: `
-                        animate__animated
-                        animate__fadeInUp
-                        animate__faster `
+                        popup: `animate__animated animate__fadeInUp animate__faster`
                     },
                     hideClass: {
-                        popup: `
-                        animate__animated
-                        animate__fadeOutDown
-                        animate__faster `
+                        popup: `animate__animated animate__fadeOutDown animate__faster`
                     }
                 });
                 return;
             }
 
-            // busco el maximo pedido y le sumo 1 
-            const pedidoMaximo = await axios.get('http://localhost:4000/api/orders');
-            // Aquí deberías tener la lógica para obtener la fecha actual en el formato que necesitas.
-            const fechaActual = new Date().toISOString().split('T')[0]; // Formato YYYY-MM-DD
-            const pedidosData = selectedProducts.map((element) => ({
-                product_id: element.product_id,
-                pedido: pedidoMaximo.data[0].pedido + 1,
-                customer_id: Customer.selectedCustomer.customer_id,
-                precio: element.price,
-                quantity: element.quantity,
-                fecha_creacion: fechaActual,
-                fecha_entrega: fechaActual,
-                obs: "Obs ",
-            }));
-            if (pedidosData.length !== 0) {
+            // aca busco el orden
+            const response = await axios.get(`${URL}/orders/orden/${deliveryDate}`);
+            const latestOrderNumber = response.data.latestOrderNumber;
+            // Verificar si se obtuvo correctamente el último orden
+            if (latestOrderNumber === null) {
+                console.error('No se pudo obtener el último orden.');
+                return;
+            }
+
+            const pedidoData = {
+                products: selectedProducts.map(product => ({
+                    product: product._id,
+                    quantity: product.quantity,
+                    stock: product.stock,
+                    price: product.isEdited ? product.precio : (((product.category.porcentaje / 100) * product.precio) + product.precio).toFixed(2)
+                })),
+                customer: Customer._id,
+                deliveryDate: deliveryDate,
+                status: "Pending",
+                orden: latestOrderNumber
+            }
+
+            if (pedidoData.products.length !== 0) {
                 Swal.fire({
                     title: "Crear el pedido?",
                     text: `Desea crear el Pedido`,
@@ -193,28 +344,23 @@ export function OrderOrders(Customer) {
                     showCancelButton: true,
                 }).then(async result => {
                     if (result.isConfirmed) {
-                        // Haciendo la solicitud POST usando Axios
-                        await axios.post('http://localhost:4000/api/orders/multiple', { pedidosData });
+                        await axios.post(`${URL}/orders`, { pedidoData });
 
                         window.dispatchEvent(Events.updatePedidos);
                         limpiarProductosSeleccionados();
-                        setHistorialPedidoActualizado(prevState => prevState + 1);
+                        setPedidoActualizado(prevState => prevState + 1);
+                        onPedidosActualizados(pedidoActualizado);
+                        setIsEdited(false); // para evitar el Edit 
                     }
                 })
-            }else{
+            } else {
                 Swal.fire({
                     title: "Se debe cargar un Producto",
                     showClass: {
-                        popup: `
-                        animate__animated
-                        animate__fadeInUp
-                        animate__faster `
+                        popup: `animate__animated animate__fadeInUp animate__faster`
                     },
                     hideClass: {
-                        popup: `
-                        animate__animated
-                        animate__fadeOutDown
-                        animate__faster `
+                        popup: `animate__animated animate__fadeOutDown animate__faster`
                     }
                 });
             }
@@ -223,79 +369,108 @@ export function OrderOrders(Customer) {
         }
     };
 
+
     return (
         <>
             <div className='order'>
                 <InputGroup size="sm" className="mb-3 text-clients">
-                    <Form.Control
-                        ref={quantityInputRef}
-                        placeholder="Cantidad"
-                        type="text"
-                        onChange={handleQuantityChange}
-                        value={quantity}
-                    />
-                    <Form.Control
-                        placeholder="Pedido"
-                        onChange={handleInputChange}
-                        value={searchValue}
-                        onKeyDown={handleEnterPress}
-                    />
+                    <div className='order-form1'>
+                        <Form.Control
+                            ref={quantityInputRef}
+                            placeholder="Cantidad"
+                            type="text"
+                            onChange={handleQuantityChange}
+                            value={quantity}
+                            className='col-3'
+                        />
+                    </div>
+                    <div className='order-form2'>
+                        <Form.Control
+                            placeholder="Pedido"
+                            onChange={handleInputChange}
+                            value={searchValue}
+                            onKeyDown={handleEnterPress}
+                            className='col-6'
+                        />
+                    </div>
+                    <div className='order-form3'>
+                        <Form.Control
+                            type='date'
+                            placeholder="Fecha de Entrega"
+                            className='fs-s col-3'
+                            defaultValue={getTomorrowDate()}
+                            onChange={(e) => setDeliveryDate(e.target.value)}
+                        />
+                    </div>
                 </InputGroup>
                 <Table striped bordered hover size="sm" className='table-products'>
                     <tbody>
                         <tr>
-                            <th>Cantidad</th>
-                            <th>Nombre</th>
-                            <th>Detalle</th>
+                            <th>Articulo</th>
+                            <th>Descripcion</th>
                             <th>Precio</th>
-                            <th>Categoria</th>
+                            <th>Cantidad</th>
                             <th>Total</th>
                             <th>Action</th>
                         </tr>
-                        {selectedProducts
-                            .reduce((unique, product) => {
-                                // Utilizamos un conjunto para garantizar productos únicos
-                                const productIds = unique.map((p) => p.product_id);
-                                if (!productIds.includes(product.product_id)) {
-                                    unique.push(product);
-                                }
-                                return unique;
-                            }, [])
-                            .map((product) => (
-                                <tr key={product.product_id}>
-                                    <td>{product && product.quantity}</td>
-                                    <td>{product && product.nombre}</td>
-                                    <td>{product && product.detalle}</td>
-                                    <td>{product && product.price}</td>
-                                    <td>{product && product.category_name}</td>
-                                    <td>{product && product.quantity * product.price}</td>
-                                    <td>
-                                        <div className="todo-actions">
-                                            <button
-                                                className='btn-danger'
-                                                onClick={() => BorraPedido(product.product_id)}
-                                            >
-                                                ☠️
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
+                        {selectedProducts.map((product) => (
+                            <tr key={product._id}>
+                                <td>{product && product.articulo}</td>
+                                <td>{product && product.descripcion}</td>
+                                <td align="right">
+                                    {editProductId === product._id ? (
+                                        <Form.Control
+                                            type="number"
+                                            value={editPrice}
+                                            onChange={handleEditPriceChange}
+                                            autoFocus
+                                        />
+                                    ) : (
+                                        // product && (((product.category.porcentaje / 100) * product.precio) + product.precio).toFixed(2)
+                                        // editPrice !== null ? editPrice : (((product.category.porcentaje / 100) * product.precio) + product.precio).toFixed(2)
+                                        // isEditedPrecio ? product.precio : (((product.category.porcentaje / 100) * product.precio) + product.precio).toFixed(2)
+                                        product.isEdited ? product.precio : (((product.category.porcentaje / 100) * product.precio) + product.precio).toFixed(2)
+                                    )}
+                                </td>
+                                <td align="right">
+                                    {editProductId === product._id ? (
+                                        <Form.Control
+                                            type="number"
+                                            value={quantity}
+                                            onChange={(e) => setQuantity(parseInt(e.target.value))}
+                                        />
+                                    ) : (
+                                        product && product.quantity
+                                    )}
+                                </td>
+                                <td align="right">{(product && product.quantity * (product.isEdited ? product.precio : (((product.category.porcentaje / 100) * product.precio) + product.precio))).toFixed(2)}</td>
+                                <td>
+                                    <div className="todo-actions">
+                                        <button className='btn-danger' onClick={() => BorraPedido(product._id)}>☠️</button>
+                                        {editProductId === product._id ? (
+                                            <>
+                                                <button className='btn-primary' onClick={() => handleEditSave(product._id)}>💾</button>
+                                                <button className='btn-secondary' onClick={handleEditPriceCancel}>❌</button>
+                                            </>
+                                        ) : (
+                                            <button className='btn-edit' onClick={() => EditarPrecio(product._id)}>✏️</button>
+                                        )}
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
                         <tr>
-                            <td colSpan="5">Total</td>
-                            <td>{total}</td>
+                            <td colSpan="4">Total</td>
+                            <td align="right">{total.toFixed(2)}</td>
                             <td></td>
                         </tr>
                     </tbody>
                 </Table>
-                <div>
-                    <Button
-                        onClick={() => GrabaPedido()}
-                        variant="primary" size='sm' >Aceptar</Button>
+                <div className='btn-graba-pedido'>
+                    <Button className='OrderOrders-Btn-new' onClick={GrabaPedido} variant="success" size='sm' >New</Button>
+                    {isEdited ? <Button className='OrderOrders-Btn-edit' onClick={EditaPedidos} variant="warning" size='sm' >Editar</Button> : ""}
+                    <Button className='OrderOrders-Btn-delete' onClick={BorraPedidos} variant="danger" size='sm' >Borrar</Button>
                 </div>
-                {/* Pasa historialPedidoActualizado como una propiedad a OrderPedidos */}
-                {/* <OrderPedidos selectedCustomer={Customer.selectedCustomer} historialPedidoActualizado={historialPedidoActualizado} /> */}
-
             </div>
 
             <div className='main-product'>
@@ -309,3 +484,9 @@ export function OrderOrders(Customer) {
         </>
     );
 }
+
+OrderOrders.propTypes = {
+    Customer: PropTypes.object.isRequired,
+    onPedidosActualizados: PropTypes.func.isRequired,
+    dataOrder: PropTypes.object.isRequired,
+};
