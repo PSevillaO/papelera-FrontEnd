@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 // import '/src/assets/pages/Product/Product.css'
 import { ProductsTable } from "./ProductsTable";
 import '../../../utils/Products.css'
+import Loading from "../../../componets/Loading/Loading";
 
 const URL = import.meta.env.VITE_SERVER_URL;
 
@@ -26,6 +27,8 @@ export default function Products() {
 
   const [suppliers, setSuppliers] = useState([]);
   const [selectedSuppliers, setSelectedSuppliers] = useState([]);
+  const [loading, setLoading] = useState(false); //Para mostrar el loading 
+
 
 
 
@@ -40,6 +43,7 @@ export default function Products() {
 
   async function getProducts(page = 0) {
     try {
+      setLoading(true);
       const response = await axios.get(`${URL}/products?page=${page}&limit=${limit}`);
       const products = response.data.products;
       const total = response.data.total
@@ -52,6 +56,8 @@ export default function Products() {
         title: "No se pudieron obtener los Productos",
         icon: 'error'
       })
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -78,7 +84,7 @@ export default function Products() {
       formData.append("presentacion", data.presentacion);
       formData.append("unidad", data.unidad);
       formData.append("bulto", data.bulto); // Nuevo campo 
-      formData.append("precio", data.precio);
+      formData.append("precio", data.precio.replace(',', '.'));
       formData.append("category", categories._id);//esta categoria la saco de un estado es la caregoria que seleciona al pricipio
       formData.append("stock", data.stock);
       // formData.append("suppliers", data.suppliers);
@@ -139,7 +145,7 @@ export default function Products() {
     setValue("presentacion", product?.presentacion || "")
     setValue("unidad", product?.unidad || "")
     setValue("bulto", product?.bulto || "")
-    setValue("precio", product?.precio || "")
+    setValue("precio", product?.precio.replace(',', '.') || "")
     setValue("category", product?.category._id || "")
     setValue("stock", product?.stock || "")
     setValue("suppliers", product?.suppliers || "")
@@ -336,8 +342,11 @@ export default function Products() {
 
   return (
     <div className="main-container form">
-      <div className="input-form">
 
+      <div className="input-form">
+        <div className="loading">
+          {loading && <Loading />}
+        </div>
         <div className="category">
           {categoryName && (
             <div className="prod-category-title">

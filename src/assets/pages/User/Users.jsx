@@ -182,7 +182,7 @@ export default function Users() {
             </div>
 
             <div className="form-group">
-              <select id="role" className="form-input" placeholder=" " {...register("role")}>
+              <select title="Elija un role" id="role" className="form-input" placeholder=" " {...register("role")}>
                 <option value="USER_ROLE">Usuario</option>
                 <option value="CLIENT_ROLE">Cliente</option>
                 <option value="ADMIN_ROLE">Administrador</option>
