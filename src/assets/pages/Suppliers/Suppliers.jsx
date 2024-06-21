@@ -6,7 +6,7 @@ import Swal from "sweetalert2";
 import { useForm } from "react-hook-form";
 import './Suppliers.css'
 import { SuppliersTable } from "./SuppliersTable";
-
+import Loading from "../../../componets/Loading/Loading";
 
 const URL = import.meta.env.VITE_SERVER_URL;
 
@@ -16,6 +16,7 @@ export default function Suppliers() {
   const [dbSuppliers, setdbSuppliers] = useState([]);
   const [total, setTotal] = useState(0);
   const [limit, setLimit] = useState(10)
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     getSuppliers();
@@ -24,6 +25,7 @@ export default function Suppliers() {
 
   async function getSuppliers(page = 0) {
     try {
+      setLoading(true);
       const response = await axios.get(`${URL}/suppliers?page=${page}&limit=${limit}`);
       const suppliers = response.data.suppliers;
       const total = response.data.total
@@ -37,6 +39,8 @@ export default function Suppliers() {
         title: "No se pudieron obtener los Proveedores",
         icon: 'error'
       })
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -150,6 +154,9 @@ export default function Suppliers() {
   return (
     <div className="main-container form">
       <div className="input-form">
+        <div className="loading">
+          {loading && <Loading />}
+        </div>
         <h2 className="input-title">
           Proveedores
           {supplierId && (

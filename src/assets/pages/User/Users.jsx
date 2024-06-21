@@ -6,6 +6,7 @@ import Swal from "sweetalert2";
 import { useForm } from "react-hook-form";
 import './Users.css'
 import { UsersTable } from "./UsersTable";
+import Loading from "../../../componets/Loading/Loading";
 
 
 const URL = import.meta.env.VITE_SERVER_URL;
@@ -16,6 +17,7 @@ export default function Users() {
   const [dbUsers, setdbUsers] = useState([]);
   const [total, setTotal] = useState(0);
   const [limit, setLimit] = useState(10)
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     getUsers();
@@ -24,6 +26,7 @@ export default function Users() {
 
   async function getUsers(page = 0) {
     try {
+      setLoading(true);
       const response = await axios.get(`${URL}/users?page=${page}&limit=${limit}`);
       const users = response.data.users;
       const total = response.data.total
@@ -37,6 +40,8 @@ export default function Users() {
         title: "No se pudieron obtener los Usuarios",
         icon: 'error'
       })
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -153,6 +158,9 @@ export default function Users() {
   return (
     <div className="main-container form">
       <div className="input-form">
+        <div className="loading">
+          {loading && <Loading />}
+        </div>
         <h2 className="input-title">
           Clientes
           {userId && (
